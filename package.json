@@ -1,0 +1,19 @@
+{
+  "name": "simple-circuits",
+  "version": "1.0.0",
+  "description": "Simple circuit breakers for node",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alsiola/simple-circuits.git"
+  },
+  "author": "Alex Young",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alsiola/simple-circuits/issues"
+  },
+  "homepage": "https://github.com/alsiola/simple-circuits#readme"
+}
