@@ -1,19 +1,49 @@
 {
-  "name": "simple-circuits",
-  "version": "1.0.0",
-  "description": "Simple circuit breakers for node",
-  "main": "lib/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alsiola/simple-circuits.git"
-  },
-  "author": "Alex Young",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/alsiola/simple-circuits/issues"
-  },
-  "homepage": "https://github.com/alsiola/simple-circuits#readme"
+    "name": "gangster",
+    "version": "0.0.1",
+    "description": "Circuit breakers for node",
+    "main": "lib/index.js",
+    "scripts": {
+        "test": "NODE_ENV=test jest",
+        "test:watch": "NODE_ENV=test jest --watch",
+        "test:coverage": "NODE_ENV=test jest --coverage"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/alsiola/simple-circuits.git"
+    },
+    "author": "Alex Young",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/alsiola/simple-circuits/issues"
+    },
+    "homepage": "https://github.com/alsiola/simple-circuits#readme",
+    "devDependencies": {
+        "@types/jest": "^23.3.9",
+        "@types/node": "^10.12.7",
+        "jest": "^23.6.0",
+        "ts-jest": "^23.10.4",
+        "typescript": "^3.1.6"
+    },
+    "jest": {
+        "transform": {
+            "^.+\\.tsx?$": "ts-jest"
+        },
+        "testPathIgnorePatterns": [
+            "/node_modules/",
+            "/lib/",
+            "/demo/"
+        ],
+        "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+        "moduleFileExtensions": [
+            "ts",
+            "tsx",
+            "js",
+            "jsx",
+            "json"
+        ],
+        "collectCoverageFrom": [
+            "src/**/*"
+        ]
+    }
 }
