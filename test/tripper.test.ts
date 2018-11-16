@@ -1,16 +1,16 @@
 import { Tripper, TripperState } from "../src/tripper";
 import { seconds, Duration } from "../src";
 import { toMilliseconds } from "../src/duration";
-
-const delay = (duration: Duration): Promise<void> =>
-    new Promise(r => setTimeout(r, toMilliseconds(duration)));
+import { delay } from "./helpers";
 
 describe("Tripper", () => {
     it("tracks failure rate", () => {
         const tripper = new Tripper({
             threshold: 20,
             for: seconds(30),
-            within: seconds(100)
+            within: seconds(100),
+            breakerName: "test",
+            name: "tripper"
         });
 
         expect(tripper.status().currentFailurePercentage).toBe(0);
@@ -26,7 +26,9 @@ describe("Tripper", () => {
         const tripper = new Tripper({
             threshold: 51,
             for: seconds(30),
-            within: seconds(100)
+            within: seconds(100),
+            breakerName: "test",
+            name: "tripper"
         });
 
         tripper.recordSuccess();
@@ -43,7 +45,9 @@ describe("Tripper", () => {
         const tripper = new Tripper({
             threshold: 51,
             for: seconds(0.1),
-            within: seconds(100)
+            within: seconds(100),
+            breakerName: "test",
+            name: "tripper"
         });
 
         tripper.recordSuccess();
@@ -65,7 +69,9 @@ describe("Tripper", () => {
         const tripper = new Tripper({
             threshold: 51,
             for: seconds(0.1),
-            within: seconds(100)
+            within: seconds(100),
+            breakerName: "test",
+            name: "tripper"
         });
 
         tripper.recordSuccess();
@@ -87,7 +93,9 @@ describe("Tripper", () => {
         const tripper = new Tripper({
             threshold: 51,
             for: seconds(0.1),
-            within: seconds(100)
+            within: seconds(100),
+            breakerName: "test",
+            name: "tripper"
         });
 
         tripper.recordSuccess();
@@ -109,7 +117,9 @@ describe("Tripper", () => {
         const tripper = new Tripper({
             threshold: 51,
             for: seconds(10),
-            within: seconds(0.1)
+            within: seconds(0.1),
+            breakerName: "test",
+            name: "tripper"
         });
 
         tripper.recordSuccess();

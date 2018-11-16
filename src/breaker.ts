@@ -13,22 +13,26 @@ interface MatchTripper<T> {
 
 type MatchTripperCreationOpts<T> = CreateMatcherTripperOpts & MatchTripper<T>;
 
-export interface BreakerOpts<T, U> {
-    name: string;
+export interface BreakerInternalOpts<T, U> {
     failTester: FailTester<U>;
     matchTrippers: Array<MatchTripperCreationOpts<T>>;
     defaultTripper: CreateDefaultTripperOpts;
 }
 
+export interface BreakerOpts<T, U> extends BreakerInternalOpts<T, U> {
+    name: string;
+}
+
 export class Breaker<T, U> {
     private trippers: Array<{ tripper: Tripper } & MatchTripper<T>>;
     private failTester: FailTester<U>;
+    private name: string;
 
     constructor(
-        private name: string,
         private f: AsyncFunction<T, U>,
-        { failTester, matchTrippers, defaultTripper }: BreakerOpts<T, U>
+        { failTester, matchTrippers, defaultTripper, name }: BreakerOpts<T, U>
     ) {
+        this.name = name;
         this.trippers = [
             {
                 match: () => true,
