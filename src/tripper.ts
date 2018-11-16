@@ -1,10 +1,18 @@
 import { Duration, toMilliseconds, seconds } from "./duration";
 
-export interface TripperOpts {
+export interface CreateDefaultTripperOpts {
     threshold: number;
     within: Duration;
     for: Duration;
     outcomeCleanupInterval?: Duration;
+}
+
+export interface CreateMatcherTripperOpts extends CreateDefaultTripperOpts {
+    name: string;
+}
+
+export interface TripperOpts extends CreateMatcherTripperOpts {
+    breakerName: string;
 }
 
 interface Outcome {
