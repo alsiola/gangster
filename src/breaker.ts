@@ -1,5 +1,5 @@
 import { AsyncFunction } from "./types";
-import { BreakerError } from "./breaker-error";
+import { BreakerError, ErrorCode } from "./breaker-error";
 import {
     Tripper,
     CreateDefaultTripperOpts,
@@ -71,7 +71,10 @@ export class Breaker<T, U> {
                 ({ tripper, match }) => match(a) && tripper.isTripped()
             )
         ) {
-            throw new BreakerError("Circuit breaker is open");
+            throw new BreakerError(
+                "Circuit breaker is open",
+                ErrorCode.BreakerOpen
+            );
         }
 
         /**
@@ -94,7 +97,10 @@ export class Breaker<T, U> {
                     this.getMatchingTrippers(a).forEach(({ tripper }) =>
                         tripper.recordFailure()
                     );
-                    throw new BreakerError("Invalid function result");
+                    throw new BreakerError(
+                        "Invalid function result",
+                        ErrorCode.InvalidResult
+                    );
                 }
                 this.getMatchingTrippers(a).forEach(({ tripper }) =>
                     tripper.recordSuccess()
@@ -107,7 +113,11 @@ export class Breaker<T, U> {
                     tripper.recordFailure()
                 );
             }
-            throw new BreakerError("Function call failed", err);
+            throw new BreakerError(
+                "Function call failed",
+                ErrorCode.FunctionThrew,
+                err
+            );
         }
     };
 

@@ -1,11 +1,22 @@
+export enum ErrorCode {
+    // Remote call blocked because breaker is open
+    BreakerOpen = 1,
+    // Remote call succeeded, but result was invalid
+    InvalidResult = 2,
+    // Remote call threw error
+    FunctionThrew = 3
+}
+
 /**
  * Extends the default Error class to allow a library-specific
  * message without losing detail on the underlying error
- *
- * Probably needs codes as well as a message
  */
 export class BreakerError extends Error {
-    constructor(msg: string, public internalError?: any) {
+    constructor(
+        msg: string,
+        public code: ErrorCode,
+        public internalError?: any
+    ) {
         super(msg);
     }
 }
