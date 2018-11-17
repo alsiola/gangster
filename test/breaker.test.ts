@@ -126,4 +126,45 @@ describe("breaker", () => {
 
         expect(result).toBe(TestResults.good);
     });
+
+    it("uses failure tester to match results", async () => {
+        const breaker = new Breaker(testFunction, {
+            name: "test",
+            failTester: new FailTester({
+                testResult: () => true
+            }),
+            defaultTripper: {
+                for: seconds(1),
+                within: seconds(10),
+                threshold: 50
+            },
+            matchTrippers: []
+        });
+
+        expect(breaker.call(TestArgs.good)).rejects.toMatchSnapshot();
+    });
+
+    it("uses failure tester to match errors", async () => {
+        const testError = jest.fn().mockReturnValue(true);
+        const breaker = new Breaker(testFunction, {
+            name: "test",
+            failTester: new FailTester({
+                testError
+            }),
+            defaultTripper: {
+                for: seconds(1),
+                within: seconds(10),
+                threshold: 50
+            },
+            matchTrippers: []
+        });
+
+        try {
+            await breaker.call(TestArgs.bad);
+        } catch (e) {
+            expect(e).toMatchSnapshot();
+        }
+
+        expect(testError).toBeCalledWith(TestResults.bad);
+    });
 });

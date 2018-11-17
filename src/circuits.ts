@@ -1,13 +1,11 @@
 import { Breaker, BreakerOpts, BreakerInternalOpts } from "./breaker";
 import { AsyncFunction } from "./types";
 
-export class Circuits<TResult> {
-    private breakers: Breaker<any, TResult>[] = [];
-    constructor(private breakerOpts: BreakerOpts<any, TResult>) {}
+export class Circuits {
+    private breakers: Breaker<any, any>[] = [];
+    constructor(private breakerOpts: BreakerOpts<any, any>) {}
 
-    public createBreaker = <T>(
-        f: AsyncFunction<T, TResult>
-    ): Breaker<T, TResult> => {
+    public createBreaker = <T, U>(f: AsyncFunction<T, U>): Breaker<T, U> => {
         const breaker = new Breaker(f, this.breakerOpts);
         this.breakers.push(breaker);
         return breaker;

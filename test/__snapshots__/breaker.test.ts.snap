@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`breaker uses failure tester to match errors 1`] = `[Error: Function call failed]`;
+
+exports[`breaker uses failure tester to match results 1`] = `[Error: Invalid function result]`;
