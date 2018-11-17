@@ -26,6 +26,10 @@ export enum TripperState {
     open = "open"
 }
 
+/**
+ * Maintains state on call outcomes, and encapsulates logic
+ * around opening/closing the call circuit
+ */
 export class Tripper {
     private outcomes: Outcome[] = [];
     private state: TripperState = TripperState.closed;
@@ -35,6 +39,11 @@ export class Tripper {
         this.startOldOutcomeRemoval();
     }
 
+    /**
+     * When we get a failure, if:
+     * half-open - immediately go full open
+     * closed - open only if this pushes us over threshold
+     */
     public recordFailure = () => {
         this.outcomes.push({
             success: false,
@@ -45,18 +54,14 @@ export class Tripper {
             this.state === TripperState.half ||
             this.currentFailurePercentage() >= this.tripperOpts.threshold
         ) {
-            this.state = TripperState.open;
-
-            if (this.openToHalfTimeout) {
-                clearTimeout(this.openToHalfTimeout);
-            }
-
-            this.openToHalfTimeout = setTimeout(() => {
-                this.state = TripperState.half;
-            }, toMilliseconds(this.tripperOpts.for));
+            this.open();
         }
     };
 
+    /**
+     * When we get a success
+     * If half open, we can now go to closed
+     */
     public recordSuccess = () => {
         this.outcomes.push({
             success: true,
@@ -75,6 +80,27 @@ export class Tripper {
         state: this.state
     });
 
+    /**
+     * Open the breaker to prevent calls
+     * The openToHalfTimeout is kept in local state so that if simultaneous
+     * calls cause opening, we don't create multiple timeouts
+     */
+    private open() {
+        this.state = TripperState.open;
+
+        if (this.openToHalfTimeout) {
+            clearTimeout(this.openToHalfTimeout);
+        }
+
+        this.openToHalfTimeout = setTimeout(() => {
+            this.state = TripperState.half;
+        }, toMilliseconds(this.tripperOpts.for));
+    }
+
+    /**
+     * Every outcomeCleanupInterval, look for and remove stored outcomes
+     * that are no longer relevant, according to the within measure
+     */
     private startOldOutcomeRemoval = () => {
         setTimeout(
             this.startOldOutcomeRemoval.bind(this),
@@ -84,17 +110,28 @@ export class Tripper {
         );
     };
 
+    /**
+     * Remove outcomes that are out of the period within which we are interested
+     * Returns all outcomes so that other methods can get a snapshot
+     */
     private removeOldOutcomes = () => {
         const cutoff = Date.now() - toMilliseconds(this.tripperOpts.within);
-        this.outcomes = this.outcomes.filter(
+        const inScopeOutcomes = this.outcomes.filter(
             ({ timestamp }) => timestamp >= cutoff
         );
+        this.outcomes = inScopeOutcomes;
+        return inScopeOutcomes;
     };
 
+    /**
+     * Calculate the percentage of calls that have failed within the interested
+     * period (within)
+     */
     private currentFailurePercentage = () => {
-        this.removeOldOutcomes();
+        // Get a snapshot of outcomes relevant to now
+        const outcomes = this.removeOldOutcomes();
 
-        const [succeeds, fails] = this.outcomes.reduce(
+        const [succeeds, fails] = outcomes.reduce(
             ([s, f], { success }) => [
                 s + (success ? 1 : 0),
                 f + (success ? 0 : 1)

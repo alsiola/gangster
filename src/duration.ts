@@ -1,3 +1,7 @@
+/**
+ * These functions provide a simpler interface to create
+ * durations and convert them to milliseconds for use in timeouts
+ */
 export enum DurationInterval {
     Milliseconds = "Milliseconds",
     Seconds = "Seconds",

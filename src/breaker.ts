@@ -58,7 +58,14 @@ export class Breaker<T, U> {
         status: this.trippers.map(({ tripper }) => tripper.status())
     });
 
+    /**
+     * Attempt to call the wrapped function
+     */
     public call = (a: T): Promise<U> => {
+        /**
+         * Find any trippers that match the arguments, including the default
+         * If any are open, this call cannot be allowed to continue
+         */
         if (
             this.trippers.some(
                 ({ tripper, match }) => match(a) && tripper.isTripped()
@@ -67,6 +74,20 @@ export class Breaker<T, U> {
             throw new BreakerError("Circuit breaker is open");
         }
 
+        /**
+         * No trippers are open, so we can make the call
+         *
+         * If it succeeds (i.e. resolves), then we further check that it
+         * isn't a failure case with the fail tester - this allows checking
+         * e.g. specific HTTP codes, where it may resolve to a 204, but only
+         * a 200 would be considered acceptable.
+         *
+         * If it rejects, then we test the error - in case certain error codes
+         * should not be considered failures, e.g. a 404.
+         *
+         * In both cases, record the success/failure with all trippers that are
+         * a match for the arguments
+         */
         try {
             return this.f(a).then(result => {
                 if (this.failTester.isFailureResult(result)) {

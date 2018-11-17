@@ -3,6 +3,11 @@ export interface FailureConditions<U> {
     testResult?: (a: U) => boolean;
 }
 
+/**
+ * Provides checking capability for failure through two
+ * user-provided failureConditions which are simple predicates
+ * on U
+ */
 export class FailTester<U> {
     constructor(private failureConditions: FailureConditions<U> = {}) {}
 
