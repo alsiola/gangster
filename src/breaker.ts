@@ -30,14 +30,17 @@ export interface BreakerOpts<T, U> extends BreakerInternalOpts<T, U> {
 }
 
 export class Breaker<T, U>
-    implements TypedEventEmitter<BreakerEvents<T, U>, T, U> {
+    implements TypedEventEmitter<BreakerEvents<T, U>, Breaker<T, U>> {
     private trippers: Array<{ tripper: Tripper } & MatchTripper<T>>;
     private failTester: FailTester<U>;
     private name: string;
-    private emitter: TypedEventEmitterInternal<BreakerEvents<T, U>, T, U>;
+    private emitter: TypedEventEmitterInternal<
+        BreakerEvents<T, U>,
+        Breaker<T, U>
+    >;
 
     constructor(
-        private f: AsyncFunction<T, U>,
+        private wrappedFunction: AsyncFunction<T, U>,
         { failTester, matchTrippers, defaultTripper, name }: BreakerOpts<T, U>
     ) {
         this.name = name;
@@ -59,10 +62,10 @@ export class Breaker<T, U>
             }))
         ];
         this.failTester = failTester;
-        this.emitter = new EventEmitter();
+        this.emitter = new EventEmitter() as any;
     }
 
-    public on: TypedEventEmitter<BreakerEvents<T, U>, T, U>["on"] = (
+    public on: TypedEventEmitter<BreakerEvents<T, U>, Breaker<T, U>>["on"] = (
         event: any,
         cb: any
     ) => {
@@ -78,18 +81,18 @@ export class Breaker<T, U>
     /**
      * Attempt to call the wrapped function
      */
-    public call = (a: T): Promise<U> => {
-        this.emitter.emit(BreakerEventNames.called, { args: a });
+    public call = (args: T): Promise<U> => {
+        this.emitter.emit(BreakerEventNames.called, { args: args });
         /**
          * Find any trippers that match the arguments, including the default
          * If any are open, this call cannot be allowed to continue
          */
         const openTripper = this.trippers.find(
-            ({ tripper, match }) => match(a) && tripper.isTripped()
+            ({ tripper, match }) => match(args) && tripper.isTripped()
         );
         if (openTripper) {
             this.emitter.emit(BreakerEventNames.callBlocked, {
-                args: a,
+                args,
                 tripperName: openTripper.tripper.name
             });
             throw new BreakerError(
@@ -112,10 +115,17 @@ export class Breaker<T, U>
          * In both cases, record the success/failure with all trippers that are
          * a match for the arguments
          */
+        this.emitter.emit(BreakerEventNames.callAllowed, {
+            args
+        });
         try {
-            return this.f(a).then(result => {
+            return this.wrappedFunction(args).then(result => {
                 if (this.failTester.isFailureResult(result)) {
-                    this.getMatchingTrippers(a).forEach(({ tripper }) =>
+                    this.emitter.emit(BreakerEventNames.invalidResult, {
+                        args,
+                        result
+                    });
+                    this.getMatchingTrippers(args).forEach(({ tripper }) =>
                         tripper.recordFailure()
                     );
                     throw new BreakerError(
@@ -123,21 +133,37 @@ export class Breaker<T, U>
                         ErrorCode.InvalidResult
                     );
                 }
-                this.getMatchingTrippers(a).forEach(({ tripper }) =>
+                this.emitter.emit(BreakerEventNames.validResult, {
+                    args,
+                    result
+                });
+                this.getMatchingTrippers(args).forEach(({ tripper }) =>
                     tripper.recordSuccess()
                 );
                 return result;
             });
-        } catch (err) {
-            if (this.failTester.isFailureError(err)) {
-                this.getMatchingTrippers(a).forEach(({ tripper }) =>
+        } catch (error) {
+            if (this.failTester.isFailureError(error)) {
+                this.emitter.emit(BreakerEventNames.invalidError, {
+                    args,
+                    error
+                });
+                this.getMatchingTrippers(args).forEach(({ tripper }) =>
                     tripper.recordFailure()
+                );
+            } else {
+                this.emitter.emit(BreakerEventNames.validError, {
+                    args,
+                    error
+                });
+                this.getMatchingTrippers(args).forEach(({ tripper }) =>
+                    tripper.recordSuccess()
                 );
             }
             throw new BreakerError(
                 "Function call failed",
                 ErrorCode.FunctionThrew,
-                err
+                error
             );
         }
     };

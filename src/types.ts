@@ -21,19 +21,19 @@ type UnionToIntersection<U> = (U extends any
     ? I
     : never;
 
-export type TypedEventEmitter<Events, T, U> = UnionToIntersection<
+export type TypedEventEmitter<Events, This> = UnionToIntersection<
     {
         [K in keyof Events]: {
-            on: (a: K, cb: (a: Events[K]) => void) => ThisType<Breaker<T, U>>;
+            on: (a: K, cb: (a: Events[K]) => void) => This;
         }
     }[keyof Events]
 >;
 
-export type TypedEventEmitterInternal<Events, T, U> = UnionToIntersection<
+export type TypedEventEmitterInternal<Events, This> = UnionToIntersection<
     {
         [K in keyof Events]: {
             emit: (a: K, data: Events[K]) => void;
         }
     }[keyof Events]
 > &
-    TypedEventEmitter<Events, T, U>;
+    TypedEventEmitter<Events, This>;

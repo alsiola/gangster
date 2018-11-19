@@ -1,6 +1,7 @@
 export enum BreakerEventNames {
     called = "called",
     callBlocked = "callBlocked",
+    callAllowed = "callAllowed",
     validResult = "validResult",
     invalidResult = "invalidResult",
     validError = "validError",
@@ -9,6 +10,9 @@ export enum BreakerEventNames {
 
 export interface BreakerEvents<T, U> {
     [BreakerEventNames.called]: {
+        args: T;
+    };
+    [BreakerEventNames.callAllowed]: {
         args: T;
     };
     [BreakerEventNames.callBlocked]: {
