@@ -1,6 +1,7 @@
 import { Breaker } from "../src/breaker";
 import { FailTester, seconds } from "../src";
 import { delay } from "./helpers";
+import { BreakerEventNames } from "../src/events";
 
 type TestFunction = (a: TestArgs) => Promise<TestResults>;
 
@@ -166,5 +167,28 @@ describe("breaker", () => {
         }
 
         expect(testError).toBeCalledWith(TestResults.bad);
+    });
+
+    it("emits called event with args when called", async () => {
+        const breaker = new Breaker(testFunction, {
+            name: "test",
+            failTester: new FailTester({
+                testResult: () => true
+            }),
+            defaultTripper: {
+                for: seconds(1),
+                within: seconds(10),
+                threshold: 50
+            },
+            matchTrippers: []
+        });
+
+        const cb = jest.fn();
+
+        breaker.on(BreakerEventNames.called, cb);
+
+        breaker.call(TestArgs.good);
+
+        expect(cb).toBeCalledWith({ args: TestArgs.good });
     });
 });

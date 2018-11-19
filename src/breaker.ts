@@ -1,4 +1,8 @@
-import { AsyncFunction } from "./types";
+import {
+    AsyncFunction,
+    TypedEventEmitter,
+    TypedEventEmitterInternal
+} from "./types";
 import { BreakerError, ErrorCode } from "./breaker-error";
 import {
     Tripper,
@@ -6,6 +10,8 @@ import {
     CreateMatcherTripperOpts
 } from "./tripper";
 import { FailTester } from "./fail-tester";
+import { BreakerEvents, BreakerEventNames } from "./events";
+import { EventEmitter } from "events";
 
 interface MatchTripper<T> {
     match: (a: T) => boolean;
@@ -23,10 +29,12 @@ export interface BreakerOpts<T, U> extends BreakerInternalOpts<T, U> {
     name: string;
 }
 
-export class Breaker<T, U> {
+export class Breaker<T, U>
+    implements TypedEventEmitter<BreakerEvents<T, U>, T, U> {
     private trippers: Array<{ tripper: Tripper } & MatchTripper<T>>;
     private failTester: FailTester<U>;
     private name: string;
+    private emitter: TypedEventEmitterInternal<BreakerEvents<T, U>, T, U>;
 
     constructor(
         private f: AsyncFunction<T, U>,
@@ -51,7 +59,16 @@ export class Breaker<T, U> {
             }))
         ];
         this.failTester = failTester;
+        this.emitter = new EventEmitter();
     }
+
+    public on: TypedEventEmitter<BreakerEvents<T, U>, T, U>["on"] = (
+        event,
+        cb
+    ) => {
+        this.emitter.on(event, cb);
+        return this;
+    };
 
     public status = () => ({
         name: this.name,
@@ -62,6 +79,7 @@ export class Breaker<T, U> {
      * Attempt to call the wrapped function
      */
     public call = (a: T): Promise<U> => {
+        this.emitter.emit(BreakerEventNames.called, { args: a });
         /**
          * Find any trippers that match the arguments, including the default
          * If any are open, this call cannot be allowed to continue
