@@ -35,8 +35,11 @@ export class Tripper {
     private state: TripperState = TripperState.closed;
     private openToHalfTimeout?: NodeJS.Timer;
 
+    public name: string;
+
     constructor(private tripperOpts: TripperOpts) {
         this.startOldOutcomeRemoval();
+        this.name = tripperOpts.name;
     }
 
     /**
@@ -77,7 +80,8 @@ export class Tripper {
 
     public status = () => ({
         currentFailurePercentage: this.currentFailurePercentage(),
-        state: this.state
+        state: this.state,
+        name: this.tripperOpts.name
     });
 
     /**

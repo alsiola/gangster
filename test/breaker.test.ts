@@ -2,6 +2,7 @@ import { Breaker } from "../src/breaker";
 import { FailTester, seconds } from "../src";
 import { delay } from "./helpers";
 import { BreakerEventNames } from "../src/events";
+import { milliseconds } from "../src/duration";
 
 type TestFunction = (a: TestArgs) => Promise<TestResults>;
 
@@ -190,5 +191,39 @@ describe("breaker", () => {
         breaker.call(TestArgs.good);
 
         expect(cb).toBeCalledWith({ args: TestArgs.good });
+    });
+
+    it("emits blocked event with args and tripper name when call is blocked", async () => {
+        const breaker = new Breaker(testFunction, {
+            name: "test",
+            failTester: new FailTester({
+                testResult: () => true
+            }),
+            defaultTripper: {
+                for: seconds(1),
+                within: seconds(10),
+                threshold: -1
+            },
+            matchTrippers: []
+        });
+
+        const cb = jest.fn();
+
+        breaker.on(BreakerEventNames.callBlocked, cb);
+
+        // Make the circuit open
+        try {
+            await breaker.call(TestArgs.bad);
+        } catch (e) {}
+
+        // This call should be blocked
+        try {
+            await breaker.call(TestArgs.good);
+        } catch (e) {}
+
+        expect(cb).toBeCalledWith({
+            args: TestArgs.good,
+            tripperName: "default"
+        });
     });
 });

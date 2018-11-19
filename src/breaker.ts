@@ -63,8 +63,8 @@ export class Breaker<T, U>
     }
 
     public on: TypedEventEmitter<BreakerEvents<T, U>, T, U>["on"] = (
-        event,
-        cb
+        event: any,
+        cb: any
     ) => {
         this.emitter.on(event, cb);
         return this;
@@ -84,11 +84,14 @@ export class Breaker<T, U>
          * Find any trippers that match the arguments, including the default
          * If any are open, this call cannot be allowed to continue
          */
-        if (
-            this.trippers.some(
-                ({ tripper, match }) => match(a) && tripper.isTripped()
-            )
-        ) {
+        const openTripper = this.trippers.find(
+            ({ tripper, match }) => match(a) && tripper.isTripped()
+        );
+        if (openTripper) {
+            this.emitter.emit(BreakerEventNames.callBlocked, {
+                args: a,
+                tripperName: openTripper.tripper.name
+            });
             throw new BreakerError(
                 "Circuit breaker is open",
                 ErrorCode.BreakerOpen
