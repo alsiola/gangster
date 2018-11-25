@@ -25,6 +25,7 @@ export type TypedEventEmitter<Events, This> = UnionToIntersection<
     {
         [K in keyof Events]: {
             on: (a: K, cb: (a: Events[K]) => void) => This;
+            off: (a: K, cb: (a: Events[K]) => void) => This;
         }
     }[keyof Events]
 >;

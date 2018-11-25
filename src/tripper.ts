@@ -55,6 +55,14 @@ export class Tripper implements TypedEventEmitter<TripperEvents, Tripper> {
         return this;
     };
 
+    public off: TypedEventEmitter<TripperEvents, Tripper>["off"] = (
+        event,
+        cb
+    ) => {
+        this.emitter.off(event, cb);
+        return this;
+    };
+
     /**
      * When we get a failure, if:
      * half-open - immediately go full open

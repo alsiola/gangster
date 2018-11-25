@@ -69,15 +69,32 @@ export class Breaker<T, U>
         event: any,
         cb: any
     ) => {
-        // Tripper events are delegated to the tripper event emitters
-        if (event === BreakerEventNames.tripperOpened) {
-            this.trippers.forEach(({ tripper }) =>
-                tripper.on(TripperEventNames.opened, cb)
-            );
-            return this;
+        switch (event) {
+            case BreakerEventNames.tripperOpened:
+                this.trippers.forEach(({ tripper }) =>
+                    tripper.on(TripperEventNames.opened, cb)
+                );
+                return this;
+            default:
+                this.emitter.on(event, cb);
+                return this;
         }
-        this.emitter.on(event, cb);
-        return this;
+    };
+
+    public off: TypedEventEmitter<BreakerEvents<T, U>, Breaker<T, U>>["off"] = (
+        event: any,
+        cb: any
+    ) => {
+        switch (event) {
+            case BreakerEventNames.tripperOpened:
+                this.trippers.forEach(({ tripper }) =>
+                    tripper.off(TripperEventNames.opened, cb)
+                );
+                return this;
+            default:
+                this.emitter.off(event, cb);
+                return this;
+        }
     };
 
     public status = () => ({
