@@ -10,7 +10,7 @@ import {
     CreateMatcherTripperOpts
 } from "./tripper";
 import { FailTester } from "./fail-tester";
-import { BreakerEvents, BreakerEventNames } from "./events";
+import { BreakerEvents, BreakerEventNames, TripperEventNames } from "./events";
 import { EventEmitter } from "events";
 
 interface MatchTripper<T> {
@@ -69,6 +69,13 @@ export class Breaker<T, U>
         event: any,
         cb: any
     ) => {
+        // Tripper events are delegated to the tripper event emitters
+        if (event === BreakerEventNames.tripperOpened) {
+            this.trippers.forEach(({ tripper }) =>
+                tripper.on(TripperEventNames.opened, cb)
+            );
+            return this;
+        }
         this.emitter.on(event, cb);
         return this;
     };

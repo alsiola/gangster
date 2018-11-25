@@ -1,4 +1,7 @@
 import { Duration, toMilliseconds, seconds } from "./duration";
+import { TypedEventEmitter, TypedEventEmitterInternal } from "./types";
+import { TripperEvents, TripperEventNames } from "./events";
+import { EventEmitter } from "events";
 
 export interface CreateDefaultTripperOpts {
     threshold: number;
@@ -30,17 +33,27 @@ export enum TripperState {
  * Maintains state on call outcomes, and encapsulates logic
  * around opening/closing the call circuit
  */
-export class Tripper {
+export class Tripper implements TypedEventEmitter<TripperEvents, Tripper> {
     private outcomes: Outcome[] = [];
     private state: TripperState = TripperState.closed;
     private openToHalfTimeout?: NodeJS.Timer;
+    private emitter: TypedEventEmitterInternal<TripperEvents, Tripper>;
 
     public name: string;
 
     constructor(private tripperOpts: TripperOpts) {
         this.startOldOutcomeRemoval();
         this.name = tripperOpts.name;
+        this.emitter = new EventEmitter() as any;
     }
+
+    public on: TypedEventEmitter<TripperEvents, Tripper>["on"] = (
+        event,
+        cb
+    ) => {
+        this.emitter.on(event, cb);
+        return this;
+    };
 
     /**
      * When we get a failure, if:
@@ -91,6 +104,8 @@ export class Tripper {
      */
     private open() {
         this.state = TripperState.open;
+
+        this.emitter.emit(TripperEventNames.opened, { tripperName: this.name });
 
         if (this.openToHalfTimeout) {
             clearTimeout(this.openToHalfTimeout);
